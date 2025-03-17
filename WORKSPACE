@@ -829,3 +829,20 @@ http_archive(
     strip_prefix = "skia-ac75382cb971d2f5465b4608a74561ecb68599c5/include/config",
     urls = ["https://github.com/google/skia/archive/ac75382cb971d2f5465b4608a74561ecb68599c5.zip"],
 )
+
+android_sdk_repository(
+    name = "androidsdk",
+    api_level = 35,
+    path = "/Users/1113882/Library/Android/sdk",
+)
+
+android_ndk_repository(
+    name = "androidndk",
+    api_level = 29,
+    path = "/Users/1113882/Library/Android/sdk/ndk/29.0.13113456"
+)
+
+bind(
+    name = "android/crosstool",
+    actual = "@androidndk//:toolchain",
+)
