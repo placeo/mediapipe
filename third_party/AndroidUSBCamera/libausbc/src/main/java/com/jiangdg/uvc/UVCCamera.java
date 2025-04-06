@@ -210,7 +210,7 @@ public class UVCCamera {
     	if (USBMonitor.DEBUG) {
     		Timber.i("open camera status: " + mNativePtr +", size: " + mSupportedSize);
 		}
-    	var supportedSizes = getSupportedSizeList2();
+    	List<UvcCameraResolution> supportedSizes = getSupportedSizeList2();
 		if (!supportedSizes.isEmpty()) {
 			mCurrentWidth = supportedSizes.get(0).getWidth();
 			mCurrentHeight = supportedSizes.get(0).getHeight();
@@ -321,8 +321,8 @@ public class UVCCamera {
 	}
 
 	public List<UvcCameraResolution> getSupportedSize2(final int type, final List<UvcCameraResolution> supportedSize) {
-		var result = new ArrayList<UvcCameraResolution>();
-		for (var it: supportedSize) {
+		ArrayList<UvcCameraResolution> result = new ArrayList<UvcCameraResolution>();
+		for (UvcCameraResolution it: supportedSize) {
 			if (it.getSubtype() == type) {
 				result.add(it);
 			}

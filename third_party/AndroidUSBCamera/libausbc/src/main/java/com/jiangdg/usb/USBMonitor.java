@@ -838,6 +838,13 @@ public final class USBMonitor {
 			}
 			return super.equals(o);
 		}
+
+		@Override
+		public int hashCode() {
+			UsbDevice device = mWeakDevice.get();
+			return device != null ? device.hashCode() : 0;
+		}
+
 		private synchronized void checkConnection() throws IllegalStateException {
 			if (mConnection == null) {
 				throw new IllegalStateException("already closed");

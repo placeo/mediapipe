@@ -206,6 +206,7 @@ maven_install(
         "com.google.guava:listenablefuture:1.0",
         "junit:junit:4.12",
         "org.hamcrest:hamcrest-library:1.3",
+        "com.jakewharton.timber:timber:4.7.1",
     ],
     fetch_sources = True,
     repositories = [
@@ -833,13 +834,13 @@ http_archive(
 android_sdk_repository(
     name = "androidsdk",
     api_level = 35,
-    path = "/Users/1113882/Library/Android/sdk",
+    path = "/Users/placeo/Library/Android/sdk",
 )
 
 android_ndk_repository(
     name = "androidndk",
     api_level = 29,
-    path = "/Users/1113882/Library/Android/sdk/ndk/29.0.13113456"
+    path = "/Users/placeo/Library/Android/sdk/ndk/29.0.13113456"
 )
 
 bind(

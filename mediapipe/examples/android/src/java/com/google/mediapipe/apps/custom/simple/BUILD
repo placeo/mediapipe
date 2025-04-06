@@ -31,6 +31,7 @@ android_library(
         "//third_party:opencv",
         "@maven//:androidx_concurrent_concurrent_futures",
         "@maven//:com_google_guava_guava",
+        "//third_party/AndroidUSBCamera/libausbc:libausbc",
     ],
 )
 
@@ -81,5 +82,6 @@ android_binary(
         ":simple_lib",
         ":mediapipe_jni_lib",
         "//third_party:libc++_shared_lib",
+        "//third_party/AndroidUSBCamera/libausbc:libausbc",
     ],
 )
