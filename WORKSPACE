@@ -363,38 +363,6 @@ load("@mediapipe_pip_deps//:requirements.bzl", mp_install_deps = "install_deps")
 
 mp_install_deps()
 
-pip_parse(
-    name = "model_maker_pip_deps",
-    requirements_lock = "@//mediapipe/model_maker:requirements_lock.txt",
-)
-
-load("@model_maker_pip_deps//:requirements.bzl", mm_install_deps = "install_deps")
-
-mm_install_deps()
-
-http_archive(
-    name = "rules_foreign_cc",
-    sha256 = "a2e6fb56e649c1ee79703e99aa0c9d13c6cc53c8d7a0cbb8797ab2888bbc99a3",
-    strip_prefix = "rules_foreign_cc-0.12.0",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/releases/download/0.12.0/rules_foreign_cc-0.12.0.tar.gz",
-)
-
-load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
-
-rules_foreign_cc_dependencies()
-
-load("@bazel_features//:deps.bzl", "bazel_features_deps")
-
-bazel_features_deps()
-
-# TODO: This is an are indirect dependency. We should factor it out.
-http_archive(
-    name = "pthreadpool",
-    sha256 = "a4cf06de57bfdf8d7b537c61f1c3071bce74e57524fe053e0bbd2332feca7f95",
-    strip_prefix = "pthreadpool-4fe0e1e183925bf8cfa6aae24237e724a96479b8",
-    urls = ["https://github.com/Maratyszcza/pthreadpool/archive/4fe0e1e183925bf8cfa6aae24237e724a96479b8.zip"],
-)
-
 load(
     "@build_bazel_rules_apple//apple:repositories.bzl",
     "apple_rules_dependencies",
@@ -829,6 +797,30 @@ http_archive(
     sha256 = "038d4a21f9c72d71ab49e3a7d7677b39585329465d093a4260b6c73d2f3984d6",
     strip_prefix = "skia-ac75382cb971d2f5465b4608a74561ecb68599c5/include/config",
     urls = ["https://github.com/google/skia/archive/ac75382cb971d2f5465b4608a74561ecb68599c5.zip"],
+)
+
+# Add rules_foreign_cc for CMake integration
+http_archive(
+    name = "rules_foreign_cc",
+    sha256 = "5303e3363fe22cbd265c91fce228f84cf698ab0f98358ccf1d95fba227b308f6",
+    strip_prefix = "rules_foreign_cc-0.9.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/refs/tags/0.9.0.zip",
+)
+
+# Load rules_foreign_cc dependencies
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
+# Register Android NDK toolchains for rules_foreign_cc
+register_toolchains(
+    "@androidndk//:all",
+)
+
+# Bind Android NDK libraries
+bind(
+    name = "android/log",
+    actual = "@androidndk//:android_log",
 )
 
 android_sdk_repository(

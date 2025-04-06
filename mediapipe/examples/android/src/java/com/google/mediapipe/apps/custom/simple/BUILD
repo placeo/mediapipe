@@ -83,5 +83,6 @@ android_binary(
         ":mediapipe_jni_lib",
         "//third_party:libc++_shared_lib",
         "//third_party/AndroidUSBCamera/libausbc:libausbc",
+        "//third_party/AndroidUSBCamera/libausbc:libausbc_native",
     ],
 )
