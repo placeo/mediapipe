@@ -1,6 +1,7 @@
 workspace(name = "mediapipe")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 
 # Protobuf expects an //external:python_headers target
 bind(
@@ -823,19 +824,32 @@ bind(
     actual = "@androidndk//:android_log",
 )
 
+# Android SDK and NDK
 android_sdk_repository(
     name = "androidsdk",
     api_level = 35,
-    path = "/Users/placeo/Library/Android/sdk",
+    path = "/Users/1113882/Library/Android/sdk",
 )
 
 android_ndk_repository(
     name = "androidndk",
     api_level = 29,
-    path = "/Users/placeo/Library/Android/sdk/ndk/29.0.13113456"
+    path = "/Users/1113882/Library/Android/sdk/ndk/29.0.13113456",
+)
+
+bind(
+    name = "android_ndk_for_testing",
+    actual = "@androidndk//:files",
 )
 
 bind(
     name = "android/crosstool",
     actual = "@androidndk//:toolchain",
+)
+
+# Android USB Camera
+new_local_repository(
+    name = "AndroidUSBCamera",
+    path = "third_party/AndroidUSBCamera/libausbc",
+    build_file = "//third_party/AndroidUSBCamera:libausbc.BUILD",
 )

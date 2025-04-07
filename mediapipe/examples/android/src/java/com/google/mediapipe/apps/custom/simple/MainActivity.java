@@ -38,10 +38,27 @@ import com.google.mediapipe.components.PermissionHelper;
 import com.google.mediapipe.framework.AndroidAssetUtil;
 import com.google.mediapipe.glutil.EglManager;
 import java.lang.ref.WeakReference;
+import com.jiangdg.ausbc.camera.CameraUVC;
+import com.jiangdg.ausbc.callback.IPreviewDataCallBack;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbInterface;
+import android.hardware.usb.UsbEndpoint;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
+import android.app.PendingIntent;
+import android.hardware.usb.UsbConstants;
+import java.util.HashMap;
 
 /** Main activity of MediaPipe basic app. */
 public class MainActivity extends AppCompatActivity {
   private static final String TAG = "MainActivity";
+  private static final String ACTION_USB_PERMISSION = "com.google.mediapipe.apps.custom.simple.USB_PERMISSION";
 
   // Flips the camera-preview frames vertically by default, before sending them into FrameProcessor
   // to be processed in a MediaPipe graph, and flips the processed frames back when they are
@@ -88,10 +105,38 @@ public class MainActivity extends AppCompatActivity {
   // Progress dialog to show for the actions that must be executed on non-UI thread.
   private ProgressDialog progressDialog;
 
+  private CameraUVC cameraUVC;
+  private boolean isUsbCameraActive = false;
+
+  private UsbManager usbManager;
+  private UsbDevice usbDevice;
+  private UsbDeviceConnection usbConnection;
+  private UsbInterface usbInterface;
+  private UsbEndpoint usbEndpoint;
+  private Thread cameraThread;
+  private volatile boolean stopCamera = false;
+
+  private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      String action = intent.getAction();
+      if (ACTION_USB_PERMISSION.equals(action)) {
+        synchronized (this) {
+          UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+          if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+            if (device != null) {
+              setupUsbCamera(device);
+            }
+          }
+        }
+      }
+    }
+  };
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(getContentViewLayoutResId());
+    setContentView(R.layout.activity_main);
 
     try {
       applicationInfo =
@@ -120,6 +165,30 @@ public class MainActivity extends AppCompatActivity {
             applicationInfo.metaData.getBoolean("flipFramesVertically", FLIP_FRAMES_VERTICALLY));
 
     PermissionHelper.checkAndRequestCameraPermissions(this);
+
+    // USB 카메라 초기화
+    usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+    registerReceiver(usbReceiver, filter);
+
+    // USB 장치 검색
+    HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+    if (!deviceList.isEmpty()) {
+      UsbDevice device = deviceList.values().iterator().next();
+      PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
+      usbManager.requestPermission(device, permissionIntent);
+    }
+
+    cameraUVC = new CameraUVC(this);
+    cameraUVC.setPreviewCallback(new IPreviewDataCallBack() {
+      @Override
+      public void onPreviewData(byte[] data, int width, int height) {
+        if (processor != null) {
+          Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+          processor.onNewFrame(bitmap, System.currentTimeMillis());
+        }
+      }
+    });
   }
 
   // Used to obtain the content view for this application. If you are extending this class, and
@@ -138,8 +207,9 @@ public class MainActivity extends AppCompatActivity {
     converter.setFlipY(
         applicationInfo.metaData.getBoolean("flipFramesVertically", FLIP_FRAMES_VERTICALLY));
     converter.setConsumer(processor);
-    if (PermissionHelper.cameraPermissionsGranted(this)) {
-      startCamera();
+    
+    if (usbDevice != null) {
+      setupUsbCamera(usbDevice);
     }
   }
 
@@ -169,7 +239,9 @@ public class MainActivity extends AppCompatActivity {
   protected void onPause() {
     super.onPause();
     converter.close();
-
+    
+    stopUsbCamera();
+    
     // Hide preview display until we re-open the camera again.
     previewDisplayView.setVisibility(View.GONE);
   }
@@ -250,6 +322,88 @@ public class MainActivity extends AppCompatActivity {
                 processor.getVideoSurfaceOutput().setSurface(null);
               }
             });
+  }
+
+  private void setupUsbCamera(UsbDevice device) {
+    usbDevice = device;
+    usbConnection = usbManager.openDevice(usbDevice);
+    if (usbConnection == null) {
+      Log.e(TAG, "Could not open USB device");
+      return;
+    }
+
+    usbInterface = usbDevice.getInterface(0);
+    if (!usbConnection.claimInterface(usbInterface, true)) {
+      Log.e(TAG, "Could not claim USB interface");
+      return;
+    }
+
+    for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
+      UsbEndpoint endpoint = usbInterface.getEndpoint(i);
+      if (endpoint.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+          endpoint.getDirection() == UsbConstants.USB_DIR_IN) {
+        usbEndpoint = endpoint;
+        break;
+      }
+    }
+
+    if (usbEndpoint == null) {
+      Log.e(TAG, "Could not find USB endpoint");
+      return;
+    }
+
+    startUsbCamera();
+  }
+
+  private void startUsbCamera() {
+    if (cameraThread != null && cameraThread.isAlive()) {
+      return;
+    }
+
+    stopCamera = false;
+    cameraThread = new Thread(() -> {
+      byte[] buffer = new byte[usbEndpoint.getMaxPacketSize()];
+      while (!stopCamera) {
+        int bytesRead = usbConnection.bulkTransfer(usbEndpoint, buffer, buffer.length, 5000);
+        if (bytesRead > 0) {
+          Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, bytesRead);
+          if (bitmap != null) {
+            runOnUiThread(() -> {
+              processor.onNewFrame(bitmap, System.currentTimeMillis());
+            });
+          }
+        }
+      }
+    });
+    cameraThread.start();
+    isUsbCameraActive = true;
+  }
+
+  private void stopUsbCamera() {
+    stopCamera = true;
+    if (cameraThread != null) {
+      try {
+        cameraThread.join();
+      } catch (InterruptedException e) {
+        Log.e(TAG, "Error stopping camera thread: " + e);
+      }
+      cameraThread = null;
+    }
+
+    if (usbConnection != null) {
+      if (usbInterface != null) {
+        usbConnection.releaseInterface(usbInterface);
+      }
+      usbConnection.close();
+    }
+
+    isUsbCameraActive = false;
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    unregisterReceiver(usbReceiver);
   }
 
   private static class CloseProcessorAndExitTask extends AsyncTask<Void, Void, Boolean> {
