@@ -325,79 +325,86 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void setupUsbCamera(UsbDevice device) {
-    usbDevice = device;
-    usbConnection = usbManager.openDevice(usbDevice);
-    if (usbConnection == null) {
-      Log.e(TAG, "Could not open USB device");
-      return;
+    if (device == null) {
+        Log.e(TAG, "USB device is null");
+        return;
     }
 
-    usbInterface = usbDevice.getInterface(0);
-    if (!usbConnection.claimInterface(usbInterface, true)) {
-      Log.e(TAG, "Could not claim USB interface");
-      return;
-    }
+    try {
+        usbDevice = device;
+        usbConnection = usbManager.openDevice(usbDevice);
+        if (usbConnection == null) {
+            throw new Exception("Could not open USB device");
+        }
 
-    for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
-      UsbEndpoint endpoint = usbInterface.getEndpoint(i);
-      if (endpoint.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK &&
-          endpoint.getDirection() == UsbConstants.USB_DIR_IN) {
-        usbEndpoint = endpoint;
-        break;
-      }
-    }
+        usbInterface = usbDevice.getInterface(0);
+        if (!usbConnection.claimInterface(usbInterface, true)) {
+            throw new Exception("Could not claim USB interface");
+        }
 
-    if (usbEndpoint == null) {
-      Log.e(TAG, "Could not find USB endpoint");
-      return;
-    }
+        for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
+            UsbEndpoint endpoint = usbInterface.getEndpoint(i);
+            if (endpoint.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+                endpoint.getDirection() == UsbConstants.USB_DIR_IN) {
+                usbEndpoint = endpoint;
+                break;
+            }
+        }
 
-    startUsbCamera();
+        if (usbEndpoint == null) {
+            throw new Exception("Could not find USB endpoint");
+        }
+
+        startUsbCamera();
+    } catch (Exception e) {
+        Log.e(TAG, "Error setting up USB camera: " + e.getMessage());
+        stopUsbCamera();
+    }
   }
 
   private void startUsbCamera() {
-    if (cameraThread != null && cameraThread.isAlive()) {
-      return;
+    if (isUsbCameraActive) {
+        return;
     }
 
+    isUsbCameraActive = true;
     stopCamera = false;
     cameraThread = new Thread(() -> {
-      byte[] buffer = new byte[usbEndpoint.getMaxPacketSize()];
-      while (!stopCamera) {
-        int bytesRead = usbConnection.bulkTransfer(usbEndpoint, buffer, buffer.length, 5000);
-        if (bytesRead > 0) {
-          Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, bytesRead);
-          if (bitmap != null) {
-            runOnUiThread(() -> {
-              processor.onNewFrame(bitmap, System.currentTimeMillis());
-            });
-          }
+        byte[] buffer = new byte[16384];
+        while (!stopCamera && usbConnection != null && usbEndpoint != null) {
+            int bytesRead = usbConnection.bulkTransfer(usbEndpoint, buffer, buffer.length, 5000);
+            if (bytesRead > 0 && cameraUVC != null) {
+                cameraUVC.onPreviewData(buffer, 0, bytesRead);
+            }
         }
-      }
     });
     cameraThread.start();
-    isUsbCameraActive = true;
   }
 
   private void stopUsbCamera() {
     stopCamera = true;
+    isUsbCameraActive = false;
+
     if (cameraThread != null) {
-      try {
-        cameraThread.join();
-      } catch (InterruptedException e) {
-        Log.e(TAG, "Error stopping camera thread: " + e);
-      }
-      cameraThread = null;
+        try {
+            cameraThread.join();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Error stopping camera thread: " + e);
+        }
+        cameraThread = null;
     }
 
     if (usbConnection != null) {
-      if (usbInterface != null) {
-        usbConnection.releaseInterface(usbInterface);
-      }
-      usbConnection.close();
+        if (usbInterface != null) {
+            usbConnection.releaseInterface(usbInterface);
+            usbInterface = null;
+        }
+        usbConnection.close();
+        usbConnection = null;
     }
 
-    isUsbCameraActive = false;
+    usbDevice = null;
+    usbEndpoint = null;
   }
 
   @Override

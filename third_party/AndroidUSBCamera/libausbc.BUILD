@@ -2,13 +2,13 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup(
     name = "manifest",
-    srcs = ["src/main/AndroidManifest.xml"],
+    srcs = ["libausbc/src/main/AndroidManifest.xml"],
 )
 
 android_library(
     name = "libausbc",
     srcs = glob([
-        "src/main/java/com/jiangdg/ausbc/**/*.java",
+        "libausbc/src/main/java/com/jiangdg/ausbc/**/*.java",
     ]),
     manifest = ":manifest",
     deps = [
