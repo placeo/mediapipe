@@ -20,16 +20,35 @@ android_library(
 cc_library(
     name = "libausbc_native",
     srcs = glob([
-        "src/main/cpp/**/*.cpp",
+        "libausbc/src/main/jni/**/*.c",
+        "libausbc/src/main/jni/**/*.cpp",
     ]),
     hdrs = glob([
-        "src/main/cpp/**/*.h",
+        "libausbc/src/main/jni/**/*.h",
+        "libausbc/src/main/jni/**/*.hpp",
     ]),
     includes = [
-        "src/main/cpp",
+        "libausbc/src/main/jni",
+        "libausbc/src/main/jni/common",
+        "libausbc/src/main/jni/libusb",
+        "libausbc/src/main/jni/libuvc",
+        "libausbc/src/main/jni/UVCCamera",
+        "libausbc/src/main/jni/libjpeg-turbo-1.5.0",
+    ],
+    copts = [
+        "-std=c++17",
+        "-std=c99",
+        "-DANDROID_ARM_NEON",
+        "-DREQUIRE_SIMD",
+        "-DENABLE_STATIC",
+        "-DLIBUVC_HAS_JPEG",
     ],
     linkopts = [
         "-landroid",
         "-llog",
+    ],
+    deps = [
+        "//third_party/AndroidUSBCamera:libuvc",
+        "//third_party/AndroidUSBCamera:libusb",
     ],
 ) 

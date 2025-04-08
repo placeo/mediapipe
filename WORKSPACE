@@ -850,6 +850,6 @@ bind(
 # Android USB Camera
 new_local_repository(
     name = "AndroidUSBCamera",
-    path = "third_party/AndroidUSBCamera/libausbc",
-    build_file = "//third_party/AndroidUSBCamera:libausbc.BUILD",
+    path = "third_party/AndroidUSBCamera",
+    build_file = "third_party/AndroidUSBCamera/libausbc.BUILD",
 )
