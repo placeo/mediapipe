@@ -374,7 +374,7 @@ public class MainActivity extends AppCompatActivity {
         while (!stopCamera && usbConnection != null && usbEndpoint != null) {
             int bytesRead = usbConnection.bulkTransfer(usbEndpoint, buffer, buffer.length, 5000);
             if (bytesRead > 0 && cameraUVC != null) {
-                cameraUVC.onPreviewData(buffer, 0, bytesRead);
+                cameraUVC.openCamera(usbDevice);
             }
         }
     });
