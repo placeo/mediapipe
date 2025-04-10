@@ -39,20 +39,20 @@ PREFIX = "opt/opencv@3"
 
 cc_library(
     name = "opencv",
-    srcs = glob(
-        [
-            paths.join(PREFIX, "lib/libopencv_core.dylib"),
-            paths.join(PREFIX, "lib/libopencv_calib3d.dylib"),
-            paths.join(PREFIX, "lib/libopencv_features2d.dylib"),
-            paths.join(PREFIX, "lib/libopencv_highgui.dylib"),
-            paths.join(PREFIX, "lib/libopencv_imgcodecs.dylib"),
-            paths.join(PREFIX, "lib/libopencv_imgproc.dylib"),
-            paths.join(PREFIX, "lib/libopencv_video.dylib"),
-            paths.join(PREFIX, "lib/libopencv_videoio.dylib"),
-        ],
-    ),
-    hdrs = glob([paths.join(PREFIX, "include/opencv2/**/*.h*")]),
-    includes = [paths.join(PREFIX, "include/")],
-    linkstatic = 1,
+    srcs = glob([
+        "lib/*.dylib",
+    ]),
+    hdrs = glob(["include/opencv4/opencv2/**/*.h*",]),
+    includes = ["include/opencv4/"],
+    linkopts = [
+        "-Llib",
+        "-lopencv_core",
+        "-lopencv_highgui",
+        "-lopencv_imgcodecs",
+        "-lopencv_imgproc",
+        "-lopencv_video",
+        "-lopencv_videoio",
+    ],
     visibility = ["//visibility:public"],
 )
+

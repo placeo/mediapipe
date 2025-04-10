@@ -206,6 +206,7 @@ maven_install(
         "com.google.guava:listenablefuture:1.0",
         "junit:junit:4.12",
         "org.hamcrest:hamcrest-library:1.3",
+        "com.jakewharton.timber:timber:4.7.1",
     ],
     fetch_sources = True,
     repositories = [
@@ -572,7 +573,8 @@ new_local_repository(
     # For local MacOS builds, the path should point to an opencv@3 installation.
     # If you edit the path here, you will also need to update the corresponding
     # prefix in "opencv_macos.BUILD".
-    path = "/usr/local",  # e.g. /usr/local/Cellar for HomeBrew
+    # path = "/usr/local",  # e.g. /usr/local/Cellar for HomeBrew
+    path = "/opt/homebrew/opt/opencv",
 )
 
 new_local_repository(
@@ -828,6 +830,31 @@ http_archive(
     strip_prefix = "skia-ac75382cb971d2f5465b4608a74561ecb68599c5/include/config",
     urls = ["https://github.com/google/skia/archive/ac75382cb971d2f5465b4608a74561ecb68599c5.zip"],
 )
+
+# Add rules_foreign_cc for CMake integration
+http_archive(
+    name = "rules_foreign_cc",
+    sha256 = "5303e3363fe22cbd265c91fce228f84cf698ab0f98358ccf1d95fba227b308f6",
+    strip_prefix = "rules_foreign_cc-0.9.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/refs/tags/0.9.0.zip",
+)
+
+# Load rules_foreign_cc dependencies
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
+# Register Android NDK toolchains for rules_foreign_cc
+register_toolchains(
+    "@androidndk//:all",
+)
+
+# Bind Android NDK libraries
+bind(
+    name = "android/log",
+    actual = "@androidndk//:android_log",
+)
+
 android_sdk_repository(
     name = "androidsdk",
     api_level = 35,
