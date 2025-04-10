@@ -20,6 +20,7 @@ android_library(
     srcs = glob(["*.java"]),
     manifest = "AndroidManifest.xml",
     resource_files = glob(["res/**"]),
+    custom_package = "com.google.mediapipe.apps.custom.simple",
     visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/java/com/google/mediapipe/components:android_camerax_helper",
@@ -32,6 +33,7 @@ android_library(
         "@maven//:androidx_concurrent_concurrent_futures",
         "@maven//:com_google_guava_guava",
         "@AndroidUSBCamera//:libausbc",
+        "@AndroidUSBCamera//:libausbc_native",
     ],
 )
 
