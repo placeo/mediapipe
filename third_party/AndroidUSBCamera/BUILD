@@ -63,21 +63,36 @@ cc_library(
 cc_library(
     name = "libuvc",
     srcs = glob([
-        "libausbc/src/main/jni/libuvc/src/*.c",
+        "libuvc-git/src/ctrl.c",
+        "libuvc-git/src/device.c",
+        "libuvc-git/src/diag.c",
+        "libuvc-git/src/frame.c",
+        "libuvc-git/src/frame-mjpeg.c",
+        "libuvc-git/src/init.c",
+        "libuvc-git/src/stream.c",
     ]),
     hdrs = glob([
-        "libausbc/src/main/jni/libuvc/include/*.h",
+        "libuvc-git/include/libuvc/*.h",
+        "libuvc-git/include/*.h",
+        "libausbc/src/main/jni/libusb/libusb/*.h",
+        "libausbc/src/main/jni/libjpeg-turbo-1.5.0/*.h",
+        "libausbc/src/main/jni/libjpeg-turbo-1.5.0/include/*.h",
     ]),
     includes = [
-        "libausbc/src/main/jni/libuvc/include",
+        "libuvc-git/include",
+        "libausbc/src/main/jni/libusb/libusb",
+        "libausbc/src/main/jni/libjpeg-turbo-1.5.0",
+        "libausbc/src/main/jni/libjpeg-turbo-1.5.0/include",
     ],
     copts = [
+        "-DLIBUVC_HAS_JPEG",
         "-std=c99",
-        "-DANDROID",
     ],
-    deps = [
-        ":libusb",
+    linkopts = [
+        "-landroid",
+        "-llog",
     ],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -176,7 +191,9 @@ cc_library(
 cc_library(
     name = "libausbc_native",
     deps = [
-        ":libausbc_native_c",
-        ":libausbc_native_cpp",
+        # ":libausbc_native_c",
+        # ":libausbc_native_cpp",
+        ":libuvc",
+        ":libusb",  
     ],
 ) 
