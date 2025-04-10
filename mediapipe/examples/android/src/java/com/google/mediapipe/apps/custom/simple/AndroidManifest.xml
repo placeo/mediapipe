@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.mediapipe.apps.basic">
+    package="com.google.mediapipe.apps.custom.simple">
 
   <uses-sdk
       android:minSdkVersion="21"
       android:targetSdkVersion="34" />
 
   <!-- For using the camera -->
-  <uses-permission android:name="android.permission.CAMERA" />
   <uses-feature android:name="android.hardware.camera" />
 
   <!-- For profiling -->

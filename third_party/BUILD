@@ -351,6 +351,20 @@ cc_library(
     }),
 )
 
+android_library(
+    name = "androidx_appcompat",
+    exports = [
+        "@maven//:androidx_appcompat_appcompat",
+    ],
+)
+
+android_library(
+    name = "androidx_constraint_layout",
+    exports = [
+        "@maven//:androidx_constraintlayout_constraintlayout",
+    ],
+)
+
 java_plugin(
     name = "autovalue_plugin",
     processor_class = "com.google.auto.value.processor.AutoValueProcessor",
